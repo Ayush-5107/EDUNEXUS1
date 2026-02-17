@@ -22,6 +22,10 @@ import {
   Plus,
   Moon,
   Sun,
+  Library,
+  Handshake,
+  TrendingUp,
+  LayoutDashboard,
 } from "lucide-react"
 import { useTheme } from "next-themes"
 import { Button } from "@/components/ui/button"
@@ -56,6 +60,17 @@ import {
 } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
 import { useAuth, type UserRole } from "./auth-context"
+import type { ViewId } from "./app-sidebar"
+
+/* ---- View header config ---- */
+const viewHeaderConfig: Record<string, { label: string; icon: typeof Search; color: string }> = {
+  research: { label: "Research Hub", icon: BookOpen, color: "text-orange-400" },
+  collab: { label: "Collaboration", icon: Handshake, color: "text-pink-400" },
+  subjects: { label: "Subjects", icon: Library, color: "text-lime-400" },
+  trending: { label: "Trending", icon: TrendingUp, color: "text-yellow-400" },
+  faculty: { label: "Faculty Studio", icon: GraduationCap, color: "text-indigo-400" },
+  admin: { label: "Admin Panel", icon: LayoutDashboard, color: "text-amber-400" },
+}
 
 /* ---- Role config ---- */
 const roleConfig: Record<UserRole, { label: string; color: string; bgColor: string; icon: typeof GraduationCap }> = {
@@ -193,12 +208,14 @@ export function TopNav({
   hideSearch = false,
   onLogoClick,
   isSticky = true,
+  activeView = "search",
 }: {
   onSearch: (query: string) => void
   onProfileClick?: () => void
   hideSearch?: boolean
   onLogoClick?: () => void
   isSticky?: boolean
+  activeView?: ViewId
 }) {
   const { user, logout } = useAuth()
   const { resolvedTheme, setTheme } = useTheme()
@@ -286,7 +303,28 @@ export function TopNav({
             </div>
           </div>
         ) : (
-          <div className="flex-1" />
+          <div className="flex flex-1 items-center justify-center">
+            {viewHeaderConfig[activeView] ? (() => {
+              const vc = viewHeaderConfig[activeView]
+              const ViewIcon = vc.icon
+              return (
+                <div className="flex items-center gap-2.5">
+                  <div className={cn("flex h-7 w-7 items-center justify-center rounded-lg bg-secondary/60", vc.color)}>
+                    <ViewIcon className="h-3.5 w-3.5" />
+                  </div>
+                  <span className="text-sm font-semibold text-foreground">{vc.label}</span>
+                  <span className="hidden text-xs text-muted-foreground sm:inline">
+                    /
+                  </span>
+                  <span className="hidden text-xs text-muted-foreground sm:inline">
+                    {user?.name ?? "User"}
+                  </span>
+                </div>
+              )
+            })() : (
+              <div className="flex-1" />
+            )}
+          </div>
         )}
 
         {/* Right Nav */}

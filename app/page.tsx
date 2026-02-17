@@ -69,6 +69,7 @@ export default function EduNexusPage() {
             hideSearch={activeView !== "search"}
             onLogoClick={() => { setActiveView("search"); setHasSearched(false) }}
             isSticky={activeView !== "search"}
+            activeView={activeView}
           />
 
           <main className="flex-1 pb-16 lg:pb-0">
