@@ -48,12 +48,7 @@ function AISynthesisCard({ query }: { query: string }) {
             </p>
           </div>
         </div>
-        <Badge
-          variant="outline"
-          className="shrink-0 border-primary/30 bg-primary/10 text-primary text-xs"
-        >
-          RAG-Powered
-        </Badge>
+
       </div>
 
       <div className="space-y-4 text-sm leading-relaxed text-secondary-foreground">
