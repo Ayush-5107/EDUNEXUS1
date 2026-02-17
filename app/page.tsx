@@ -13,6 +13,7 @@ import { ResearchCollab } from "@/components/edunexus/research-collab"
 import { AdminDashboard } from "@/components/edunexus/admin-dashboard"
 import { StudyWorkspace } from "@/components/edunexus/study-workspace"
 import { SubjectsView } from "@/components/edunexus/subjects-view"
+import { ResearchHub } from "@/components/edunexus/research-hub"
 import { NotificationsView } from "@/components/edunexus/notifications-view"
 import { ProfilePanel } from "@/components/edunexus/profile-panel"
 
@@ -72,10 +73,10 @@ export default function EduNexusPage() {
             </>
           )}
 
-          {/* Research Repository View */}
+          {/* Research Hub View */}
           {activeView === "research" && (
             <div className="pt-8">
-              <SearchResults query={searchQuery || "Research Repository"} />
+              <ResearchHub />
             </div>
           )}
 
