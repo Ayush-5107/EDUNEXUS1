@@ -3,8 +3,9 @@
 import { useState, useEffect } from "react"
 import { useAuth } from "./auth-context"
 import { useTheme } from "next-themes"
-import { Eye, EyeOff, Loader2, GraduationCap, BookOpen, Shield, Sun, Moon } from "lucide-react"
+import { Eye, EyeOff, Loader2, GraduationCap, BookOpen, Shield, Sun, Moon, UserPlus, ArrowLeft } from "lucide-react"
 import { EduNexusLogo } from "./edunexus-logo"
+import type { UserRole } from "./auth-context"
 
 const DEMO_ACCOUNTS = [
   {
@@ -40,11 +41,15 @@ const DEMO_ACCOUNTS = [
 ]
 
 export function LoginPage() {
-  const { login } = useAuth()
+  const { login, signup } = useAuth()
   const { resolvedTheme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
+  const [isSignUp, setIsSignUp] = useState(false)
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [name, setName] = useState("")
+  const [role, setRole] = useState<UserRole>("student")
+  const [department, setDepartment] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
@@ -56,11 +61,33 @@ export function LoginPage() {
     setError("")
     setLoading(true)
 
-    const result = await login(email, password)
-    if (!result.success) {
-      setError(result.error || "Login failed")
+    if (isSignUp) {
+      if (!name.trim()) {
+        setError("Please enter your full name")
+        setLoading(false)
+        return
+      }
+      if (!department.trim()) {
+        setError("Please enter your department")
+        setLoading(false)
+        return
+      }
+      const result = await signup(name, email, password, role, department)
+      if (!result.success) {
+        setError(result.error || "Sign up failed")
+      }
+    } else {
+      const result = await login(email, password)
+      if (!result.success) {
+        setError(result.error || "Login failed")
+      }
     }
     setLoading(false)
+  }
+
+  const toggleMode = () => {
+    setIsSignUp(!isSignUp)
+    setError("")
   }
 
   const handleDemoLogin = async (demoEmail: string, demoPassword: string) => {
@@ -110,14 +137,36 @@ export function LoginPage() {
           </p>
         </div>
 
-        {/* Login Card */}
+        {/* Login / Sign Up Card */}
         <div className="glass-strong rounded-2xl p-8 glow-sm">
-          <h2 className="text-xl font-semibold text-foreground mb-1">Sign in</h2>
+          <h2 className="text-xl font-semibold text-foreground mb-1">
+            {isSignUp ? "Create account" : "Sign in"}
+          </h2>
           <p className="text-muted-foreground text-sm mb-6">
-            Your role is automatically detected from your credentials
+            {isSignUp
+              ? "Join EduNexus to access your smart campus"
+              : "Your role is automatically detected from your credentials"}
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-4" suppressHydrationWarning>
+            {/* Name field (sign-up only) */}
+            {isSignUp && (
+              <div>
+                <label htmlFor="name" className="block text-sm font-medium text-secondary-foreground mb-1.5">
+                  Full Name
+                </label>
+                <input
+                  id="name"
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Your full name"
+                  className="w-full h-11 px-4 rounded-xl bg-secondary/50 border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all text-sm"
+                  required
+                />
+              </div>
+            )}
+
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-secondary-foreground mb-1.5">
                 Email
@@ -144,7 +193,7 @@ export function LoginPage() {
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter your password"
+                  placeholder={isSignUp ? "Min. 6 characters" : "Enter your password"}
                   className="w-full h-11 px-4 pr-11 rounded-xl bg-secondary/50 border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all text-sm"
                   required
                   suppressHydrationWarning
@@ -161,6 +210,41 @@ export function LoginPage() {
               </div>
             </div>
 
+            {/* Role & Department (sign-up only) */}
+            {isSignUp && (
+              <>
+                <div>
+                  <label htmlFor="role" className="block text-sm font-medium text-secondary-foreground mb-1.5">
+                    Role
+                  </label>
+                  <select
+                    id="role"
+                    value={role}
+                    onChange={(e) => setRole(e.target.value as UserRole)}
+                    className="w-full h-11 px-4 rounded-xl bg-secondary/50 border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all appearance-none"
+                  >
+                    <option value="student">Student</option>
+                    <option value="faculty">Faculty</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label htmlFor="department" className="block text-sm font-medium text-secondary-foreground mb-1.5">
+                    Department
+                  </label>
+                  <input
+                    id="department"
+                    type="text"
+                    value={department}
+                    onChange={(e) => setDepartment(e.target.value)}
+                    placeholder="e.g. Computer Science"
+                    className="w-full h-11 px-4 rounded-xl bg-secondary/50 border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all text-sm"
+                    required
+                  />
+                </div>
+              </>
+            )}
+
             {error && (
               <div className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-2.5">
                 {error}
@@ -176,16 +260,31 @@ export function LoginPage() {
               {loading ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  Signing in...
+                  {isSignUp ? "Creating account..." : "Signing in..."}
                 </>
               ) : (
-                "Sign In"
+                isSignUp ? "Create Account" : "Sign In"
               )}
             </button>
           </form>
+
+          {/* Toggle sign-in / sign-up */}
+          <div className="mt-5 text-center">
+            <p className="text-sm text-muted-foreground">
+              {isSignUp ? "Already have an account?" : "New to EduNexus?"}{" "}
+              <button
+                type="button"
+                onClick={toggleMode}
+                className="text-primary font-medium hover:underline transition-colors"
+              >
+                {isSignUp ? "Sign in" : "Create an account"}
+              </button>
+            </p>
+          </div>
         </div>
 
-        {/* Demo Accounts */}
+        {/* Demo Accounts (only on sign-in) */}
+        {!isSignUp && (
         <div className="mt-6">
           <div className="flex items-center gap-3 mb-4">
             <div className="h-px flex-1 bg-border" />
@@ -221,6 +320,7 @@ export function LoginPage() {
             })}
           </div>
         </div>
+        )}
       </div>
     </div>
   )

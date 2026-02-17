@@ -83,42 +83,42 @@ export default function EduNexusPage() {
 
             {/* Research Hub View */}
             {activeView === "research" && (
-              <div className="pt-8">
+              <div className="pt-3">
                 <ResearchHub />
               </div>
             )}
 
             {/* Research Collaboration View */}
             {activeView === "collab" && (
-              <div className="pt-8">
+              <div className="pt-3">
                 <ResearchCollab userRole={userRole} />
               </div>
             )}
 
             {/* Subjects View */}
             {activeView === "subjects" && (
-              <div className="pt-8">
+              <div className="pt-3">
                 <SubjectsView userRole={userRole} />
               </div>
             )}
 
             {/* Trending View */}
             {activeView === "trending" && (
-              <div className="pt-8">
+              <div className="pt-3">
                 <TrendingSection onSearch={handleSearch} />
               </div>
             )}
 
             {/* Faculty Studio View (faculty + admin only) */}
             {activeView === "faculty" && (userRole === "faculty" || userRole === "admin") && (
-              <div className="pt-8">
+              <div className="pt-3">
                 <FacultyMode />
               </div>
             )}
 
             {/* Admin Dashboard View (admin only) */}
             {activeView === "admin" && userRole === "admin" && (
-              <div className="pt-8">
+              <div className="pt-3">
                 <AdminDashboard />
               </div>
             )}

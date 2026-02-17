@@ -17,6 +17,7 @@ interface AuthContextType {
   user: User | null
   isAuthenticated: boolean
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>
+  signup: (name: string, email: string, password: string, role: UserRole, department: string) => Promise<{ success: boolean; error?: string }>
   logout: () => void
 }
 
@@ -54,30 +55,60 @@ const MOCK_USERS: Record<string, User & { password: string }> = {
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
+  const [extraUsers, setExtraUsers] = useState<Record<string, User & { password: string }>>({})
+
+  const allUsers = { ...MOCK_USERS, ...extraUsers }
 
   const login = useCallback(async (email: string, password: string) => {
-    // Simulate network delay
     await new Promise((resolve) => setTimeout(resolve, 800))
 
-    const mockUser = MOCK_USERS[email.toLowerCase()]
-    if (!mockUser) {
+    const found = { ...MOCK_USERS, ...extraUsers }[email.toLowerCase()]
+    if (!found) {
       return { success: false, error: "No account found with this email" }
     }
-    if (mockUser.password !== password) {
+    if (found.password !== password) {
       return { success: false, error: "Incorrect password" }
     }
 
-    const { password: _, ...userWithoutPassword } = mockUser
+    const { password: _, ...userWithoutPassword } = found
     setUser(userWithoutPassword)
     return { success: true }
-  }, [])
+  }, [extraUsers])
+
+  const signup = useCallback(async (name: string, email: string, password: string, role: UserRole, department: string) => {
+    await new Promise((resolve) => setTimeout(resolve, 800))
+
+    const key = email.toLowerCase()
+    if (MOCK_USERS[key] || extraUsers[key]) {
+      return { success: false, error: "An account with this email already exists" }
+    }
+    if (password.length < 6) {
+      return { success: false, error: "Password must be at least 6 characters" }
+    }
+
+    const initials = name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2)
+    const newUser: User & { password: string } = {
+      id: `u_${Date.now()}`,
+      name,
+      email: key,
+      role,
+      department,
+      avatar: initials,
+      password,
+    }
+
+    setExtraUsers(prev => ({ ...prev, [key]: newUser }))
+    const { password: _, ...userWithoutPassword } = newUser
+    setUser(userWithoutPassword)
+    return { success: true }
+  }, [extraUsers])
 
   const logout = useCallback(() => {
     setUser(null)
   }, [])
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated: !!user, login, logout }}>
+    <AuthContext.Provider value={{ user, isAuthenticated: !!user, login, signup, logout }}>
       {children}
     </AuthContext.Provider>
   )
