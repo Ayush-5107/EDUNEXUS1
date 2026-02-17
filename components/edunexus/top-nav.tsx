@@ -1,11 +1,11 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
+import Image from "next/image"
 import {
   Search,
   Bell,
   Upload,
-  Sparkles,
   LogOut,
   GraduationCap,
   BookOpen,
@@ -20,7 +20,10 @@ import {
   Paperclip,
   Send,
   Plus,
+  Moon,
+  Sun,
 } from "lucide-react"
+import { useTheme } from "next-themes"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
@@ -192,6 +195,7 @@ export function TopNav({
   onProfileClick?: () => void
 }) {
   const { user, logout } = useAuth()
+  const { theme, setTheme } = useTheme()
   const [navSearch, setNavSearch] = useState("")
   const [notifOpen, setNotifOpen] = useState(false)
   const [notifications, setNotifications] = useState(initialNotifications)
@@ -240,8 +244,8 @@ export function TopNav({
       <div className="flex h-14 items-center gap-4 px-4 lg:px-6">
         {/* Mobile logo */}
         <div className="flex shrink-0 items-center gap-2 lg:hidden">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-            <Sparkles className="h-4 w-4 text-primary-foreground" />
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg overflow-hidden">
+            <Image src="/images/logo.png" alt="EduNexus" width={32} height={32} className="object-contain" />
           </div>
           <span className="text-lg font-bold text-foreground">EduNexus</span>
         </div>
@@ -278,6 +282,18 @@ export function TopNav({
               Upload
             </Button>
           )}
+
+          {/* Theme toggle */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            className="text-muted-foreground hover:text-foreground hover:bg-secondary/60"
+            aria-label="Toggle theme"
+          >
+            <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+            <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+          </Button>
 
           {/* Bell — Notification toggle */}
           <div className="relative" ref={panelRef}>

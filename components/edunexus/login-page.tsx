@@ -1,8 +1,9 @@
 "use client"
 
 import { useState } from "react"
+import Image from "next/image"
 import { useAuth } from "./auth-context"
-import { Brain, Eye, EyeOff, Loader2, GraduationCap, BookOpen, Shield } from "lucide-react"
+import { Eye, EyeOff, Loader2, GraduationCap, BookOpen, Shield } from "lucide-react"
 
 const DEMO_ACCOUNTS = [
   {
@@ -81,8 +82,8 @@ export function LoginPage() {
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-3 mb-4">
             <div className="relative">
-              <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center glow-sm">
-                <Brain className="w-7 h-7 text-primary" />
+              <div className="w-14 h-14 rounded-xl overflow-hidden flex items-center justify-center">
+                <Image src="/images/logo.png" alt="EduNexus" width={56} height={56} className="object-contain" />
               </div>
             </div>
             <h1 className="text-3xl font-bold text-foreground tracking-tight">

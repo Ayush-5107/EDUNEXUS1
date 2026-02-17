@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import Image from "next/image"
 import {
   Search,
   BookOpen,
@@ -10,7 +11,6 @@ import {
   ChevronLeft,
   ChevronRight,
   TrendingUp,
-  Sparkles,
   MonitorPlay,
   Library,
 } from "lucide-react"
@@ -63,8 +63,8 @@ export function AppSidebar({
         "flex items-center gap-2.5 border-b border-border/40 px-4 h-16 shrink-0",
         collapsed && "justify-center px-0"
       )}>
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary glow-sm">
-          <Sparkles className="h-4.5 w-4.5 text-primary-foreground" />
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl overflow-hidden">
+          <Image src="/images/logo.png" alt="EduNexus" width={36} height={36} className="object-contain" />
         </div>
         {!collapsed && (
           <div className="flex flex-col overflow-hidden">

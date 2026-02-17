@@ -1,7 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import { Search, ArrowRight, Sparkles } from "lucide-react"
+import Image from "next/image"
+import { Search, ArrowRight } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 
 const filterChips = ["All", "Research Papers", "PPT", "Video Lectures", "Notes"] as const
@@ -38,7 +39,7 @@ export function HeroSearch({
 
       <div className="relative z-10 flex max-w-3xl flex-col items-center text-center">
         <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-border bg-secondary/50 px-4 py-1.5 text-xs font-medium text-muted-foreground">
-          <Sparkles className="h-3.5 w-3.5 text-primary" />
+          <Image src="/images/logo.png" alt="" width={14} height={14} className="object-contain" />
           AI-Powered Semantic Search Engine
         </div>
 

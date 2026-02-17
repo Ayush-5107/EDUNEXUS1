@@ -19,6 +19,7 @@ import {
   Check,
   ChevronLeft,
   Save,
+  Hash,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -80,6 +81,15 @@ const profileStats: Record<UserRole, { label: string; value: string }[]> = {
     { label: "Uptime", value: "99.9%" },
   ],
 }
+
+const ENROLLED_SUBJECTS = [
+  { id: 1, name: "Data Structures & Algorithms", department: "CS", semester: 3 },
+  { id: 2, name: "Basic Electrical Eng", department: "CS", semester: 3 },
+  { id: 3, name: "Discrete Mathematics", department: "CS", semester: 3 },
+  { id: 4, name: "Digital Logic Design", department: "CS", semester: 3 },
+  { id: 5, name: "Object Oriented Programming", department: "CS", semester: 3 },
+  { id: 6, name: "Computer Organization", department: "CS", semester: 3 },
+]
 
 const DEPARTMENT_OPTIONS = [
   "Computer Science",
@@ -475,6 +485,46 @@ export function ProfilePanel({
                           </Badge>
                         )
                       )}
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* Enrolled Subjects for students */}
+              {user.role === "student" && (
+                <>
+                  <Separator className="my-5 bg-border/30" />
+                  <div>
+                    <p className="mb-3 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
+                      Enrolled Subjects - Semester 3
+                    </p>
+                    <div className="flex flex-col gap-2">
+                      {ENROLLED_SUBJECTS.map((subject) => (
+                        <div
+                          key={subject.id}
+                          className="flex items-center gap-3 rounded-lg border border-border/30 bg-secondary/20 px-3.5 py-2.5 transition-colors hover:bg-secondary/30"
+                        >
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                            <Hash className="h-3.5 w-3.5 text-primary" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-foreground truncate">
+                              {subject.name}
+                            </p>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              <Badge variant="secondary" className="h-4 px-1.5 text-[9px] bg-primary/10 text-primary border-0">
+                                {subject.department}
+                              </Badge>
+                              <span className="text-[10px] text-muted-foreground">
+                                {"Sem " + subject.semester}
+                              </span>
+                            </div>
+                          </div>
+                          <span className="text-[10px] text-muted-foreground/50 font-mono">
+                                {"#" + subject.id}
+                          </span>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 </>
