@@ -55,7 +55,7 @@ export default function EduNexusPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-background bg-grid">
-      <TopNav onSearch={handleSearch} onProfileClick={() => setProfileOpen(true)} hideSearch={activeView === "research"} />
+      <TopNav onSearch={handleSearch} onProfileClick={() => setProfileOpen(true)} hideSearch={activeView !== "search"} onLogoClick={() => { setActiveView("search"); setHasSearched(false) }} />
 
       <div className="flex flex-1">
         <AppSidebar

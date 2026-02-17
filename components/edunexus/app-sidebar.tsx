@@ -58,11 +58,15 @@ export function AppSidebar({
         collapsed ? "w-[68px]" : "w-60"
       )}
     >
-      {/* Logo area */}
-      <div className={cn(
-        "flex items-center gap-2.5 border-b border-border/40 px-4 h-16 shrink-0",
-        collapsed && "justify-center px-0"
-      )}>
+      {/* Logo area — click to go to Smart Search */}
+      <button
+        onClick={() => onNavigate("search")}
+        className={cn(
+          "flex items-center gap-2.5 border-b border-border/40 px-4 h-16 shrink-0 w-full text-left transition-colors hover:bg-secondary/40",
+          collapsed && "justify-center px-0"
+        )}
+        aria-label="Go to Smart Search"
+      >
         <div className="flex h-9 w-9 shrink-0 items-center justify-center">
           <EduNexusLogo size={32} />
         </div>
@@ -72,7 +76,7 @@ export function AppSidebar({
             <span className="text-[10px] text-muted-foreground leading-tight">Smart Campus</span>
           </div>
         )}
-      </div>
+      </button>
 
       {/* Navigation items */}
       <nav className="flex flex-1 flex-col gap-1 px-2.5 py-4 overflow-y-auto">

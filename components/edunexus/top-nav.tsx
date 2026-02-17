@@ -191,10 +191,12 @@ export function TopNav({
   onSearch,
   onProfileClick,
   hideSearch = false,
+  onLogoClick,
 }: {
   onSearch: (query: string) => void
   onProfileClick?: () => void
   hideSearch?: boolean
+  onLogoClick?: () => void
 }) {
   const { user, logout } = useAuth()
   const { resolvedTheme, setTheme } = useTheme()
@@ -249,10 +251,14 @@ export function TopNav({
     <header className="sticky top-0 z-50 glass-strong">
       <div className="flex h-14 items-center gap-4 px-4 lg:px-6">
         {/* Mobile logo */}
-        <div className="flex shrink-0 items-center gap-2 lg:hidden">
+        <button
+          onClick={onLogoClick}
+          className="flex shrink-0 items-center gap-2 lg:hidden transition-colors hover:opacity-80"
+          aria-label="Go to Smart Search"
+        >
           <EduNexusLogo size={28} />
           <span className="text-lg font-bold text-foreground">EduNexus</span>
-        </div>
+        </button>
 
         {/* Center Search — hidden when a view provides its own search (e.g. Research Hub) */}
         {!hideSearch ? (
