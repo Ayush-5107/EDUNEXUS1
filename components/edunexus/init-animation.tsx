@@ -149,9 +149,6 @@ export function InitAnimation({ onComplete }: { onComplete: () => void }) {
                   transition={{ duration: 0.3, delay: 0.6 + i * 0.15, ease: "easeOut" }}
                 >
                   {word}
-                  {i < TAGLINE_WORDS.length - 1 && (
-                    <span className="ml-2 text-primary/40">{"/"}</span>
-                  )}
                 </motion.span>
               ))}
             </motion.div>
