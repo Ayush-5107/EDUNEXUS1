@@ -1,26 +1,23 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import {
-  Users,
-  Search,
-  FileText,
-  Handshake,
-  TrendingUp,
-  Shield,
-  AlertTriangle,
-  CheckCircle2,
-  Activity,
-  Building2,
-  BarChart3,
-  Clock,
+  Link2,
+  Video,
+  FileUp,
+  Sparkles,
   Loader2,
+  CheckCircle2,
+  AlertCircle,
+  Send,
   Upload,
-  Download,
+  BrainCircuit,
+  Shield,
 } from "lucide-react"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
 import {
   Select,
   SelectContent,
@@ -28,624 +25,555 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { useAuth } from "./auth-context"
-import { getSubjects, getMaterials, uploadMaterial, addMaterial } from "@/lib/api/academic.service"
-import { downloadMaterial, downloadAllMaterials } from "@/lib/api/download"
-import { MaterialViewer } from "./material-viewer"
-import type { BackendSubject, BackendMaterial } from "@/lib/api/types"
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
+import { Badge } from "@/components/ui/badge"
 
-/* ---------- Stat Card ---------- */
-function StatCard({
-  label,
-  value,
-  change,
-  icon: Icon,
-  color,
-}: {
-  label: string
-  value: string
-  change: string
-  icon: typeof Users
-  color: string
-}) {
-  return (
-    <div className="glass rounded-xl p-4">
-      <div className="flex items-center justify-between mb-3">
-        <span className="text-xs text-muted-foreground">{label}</span>
-        <div className={`h-8 w-8 rounded-lg flex items-center justify-center ${color}`}>
-          <Icon className="h-4 w-4" />
-        </div>
-      </div>
-      <p className="text-2xl font-bold text-foreground">{value}</p>
-      <p className="text-xs text-emerald-400 mt-1 flex items-center gap-1">
-        <TrendingUp className="h-3 w-3" />
-        {change}
-      </p>
-    </div>
-  )
-}
+const BASE_URL = "https://edunexus-backend-nv75.onrender.com"
 
-/* ---------- User Row ---------- */
-function UserRow({
-  name,
-  email,
-  role,
-  department,
-  lastActive,
-  status,
-}: {
-  name: string
-  email: string
-  role: string
-  department: string
-  lastActive: string
-  status: "active" | "inactive"
-}) {
-  return (
-    <div className="flex items-center gap-4 py-3 border-b border-border/30 last:border-0">
-      <div className="h-9 w-9 rounded-full bg-primary/15 flex items-center justify-center shrink-0">
-        <span className="text-xs font-medium text-primary">
-          {name.split(" ").map((n) => n[0]).join("")}
-        </span>
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-foreground truncate">{name}</p>
-        <p className="text-xs text-muted-foreground truncate">{email}</p>
-      </div>
-      <Badge variant="outline" className="text-[10px] border-border bg-secondary/30 text-muted-foreground hidden sm:flex">
-        {role}
-      </Badge>
-      <span className="text-xs text-muted-foreground hidden md:block">{department}</span>
-      <span className="text-xs text-muted-foreground hidden lg:flex items-center gap-1">
-        <Clock className="h-3 w-3" />
-        {lastActive}
-      </span>
-      <span className={`h-2 w-2 rounded-full shrink-0 ${status === "active" ? "bg-emerald-400" : "bg-muted-foreground/30"}`} />
-    </div>
-  )
-}
-
-/* ---------- Moderation Item ---------- */
-function ModerationItem({
-  title,
+/* ---------- Status Message Component ---------- */
+function StatusMessage({
+  message,
   type,
-  flaggedBy,
-  reason,
 }: {
-  title: string
-  type: string
-  flaggedBy: string
-  reason: string
+  message: string
+  type: "success" | "error"
 }) {
   return (
-    <div className="flex items-start gap-3 py-3 border-b border-border/30 last:border-0">
-      <div className="h-8 w-8 rounded-lg bg-amber-500/10 flex items-center justify-center shrink-0 mt-0.5">
-        <AlertTriangle className="h-4 w-4 text-amber-400" />
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-foreground truncate">{title}</p>
-        <p className="text-xs text-muted-foreground mt-0.5">
-          {type} &middot; Flagged by {flaggedBy} &middot; {reason}
-        </p>
-      </div>
-      <div className="flex gap-1.5 shrink-0">
-        <Button size="sm" className="h-7 rounded-lg bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25 text-xs px-2">
-          <CheckCircle2 className="h-3 w-3 mr-1" />
-          Approve
-        </Button>
-        <Button size="sm" className="h-7 rounded-lg bg-red-500/15 text-red-400 hover:bg-red-500/25 text-xs px-2">
-          Remove
-        </Button>
-      </div>
+    <div
+      className={`flex items-start gap-2.5 rounded-lg px-4 py-3 text-sm ${
+        type === "success"
+          ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+          : "bg-red-500/10 text-red-400 border border-red-500/20"
+      }`}
+    >
+      {type === "success" ? (
+        <CheckCircle2 className="h-4 w-4 mt-0.5 shrink-0" />
+      ) : (
+        <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+      )}
+      <span>{message}</span>
     </div>
   )
 }
 
-/* ---------- Department Stat ---------- */
-function DepartmentStat({ name, students, faculty, content }: { name: string; students: number; faculty: number; content: number }) {
-  return (
-    <div className="flex items-center gap-4 py-2.5 border-b border-border/30 last:border-0">
-      <Building2 className="h-4 w-4 text-muted-foreground shrink-0" />
-      <span className="text-sm text-foreground flex-1">{name}</span>
-      <div className="flex items-center gap-4 text-xs text-muted-foreground">
-        <span>{students} students</span>
-        <span>{faculty} faculty</span>
-        <span className="flex items-center gap-1">
-          <FileText className="h-3 w-3" />
-          {content}
-        </span>
-      </div>
-    </div>
-  )
-}
-
-/* ---------- Admin Material Manager ---------- */
-function MaterialManager({
-  subjects,
-  onMaterialAdded,
-}: {
-  subjects: BackendSubject[]
-  onMaterialAdded: () => void
-}) {
-  const [selectedSubjectId, setSelectedSubjectId] = useState<string>(
-    subjects.length > 0 ? String(subjects[0].id) : ""
-  )
-  const [materialType, setMaterialType] = useState<"PDF" | "LINK" | "VIDEO">("PDF")
-  const [filePath, setFilePath] = useState("")
+/* ---------- Add Link/Video Material Tab ---------- */
+function AddMaterialForm() {
+  const [subjectId, setSubjectId] = useState("")
+  const [type, setType] = useState<"LINK" | "VIDEO">("LINK")
+  const [url, setUrl] = useState("")
   const [description, setDescription] = useState("")
-  const [content, setContent] = useState("")
-  const [uploading, setUploading] = useState(false)
-  const [uploadFile, setUploadFile] = useState<File | null>(null)
-  const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
+  const [status, setStatus] = useState<{
+    message: string
+    type: "success" | "error"
+  } | null>(null)
 
-  const handleAddMaterial = async () => {
-    if (!selectedSubjectId) return
-    setUploading(true)
-    setMessage(null)
+  const handleSubmit = async () => {
+    if (!subjectId || !url) return
+    setIsLoading(true)
+    setStatus(null)
 
     try {
-      if (uploadFile) {
-        await uploadMaterial(
-          Number(selectedSubjectId),
-          "PDF",
-          uploadFile,
-          description || undefined
-        )
-      } else {
-        await addMaterial({
-          subjectId: Number(selectedSubjectId),
-          type: materialType,
-          filePath,
+      const res = await fetch(`${BASE_URL}/admin/material`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          subjectId: Number(subjectId),
+          type,
+          filePath: url,
           description,
-          content,
-        })
+        }),
+      })
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => null)
+        throw new Error(
+          errData?.message || `Request failed with status ${res.status}`
+        )
       }
-      setMessage({ text: "Material added successfully!", type: "success" })
-      setFilePath("")
+
+      setStatus({ message: "Material added successfully!", type: "success" })
+      setUrl("")
       setDescription("")
-      setContent("")
-      setUploadFile(null)
-      onMaterialAdded()
     } catch (err) {
-      setMessage({
-        text: err instanceof Error ? err.message : "Failed to add material",
+      setStatus({
+        message:
+          err instanceof Error ? err.message : "Failed to add material",
         type: "error",
       })
     } finally {
-      setUploading(false)
+      setIsLoading(false)
     }
   }
 
   return (
-    <div className="glass rounded-xl p-5">
-      <h3 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
-        <Upload className="h-4 w-4 text-primary" />
-        Add Material
-      </h3>
-
-      <div className="space-y-3">
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1.5">
-            <label className="text-xs font-medium text-muted-foreground">Subject</label>
-            <Select value={selectedSubjectId} onValueChange={setSelectedSubjectId}>
-              <SelectTrigger className="bg-secondary/30 border-border/40">
-                <SelectValue placeholder="Select subject" />
-              </SelectTrigger>
-              <SelectContent>
-                {subjects.map((s) => (
-                  <SelectItem key={s.id} value={String(s.id)}>
-                    {s.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1.5">
-            <label className="text-xs font-medium text-muted-foreground">Type</label>
-            <Select value={materialType} onValueChange={(v) => setMaterialType(v as "PDF" | "LINK" | "VIDEO")}>
-              <SelectTrigger className="bg-secondary/30 border-border/40">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="PDF">PDF</SelectItem>
-                <SelectItem value="LINK">Link</SelectItem>
-                <SelectItem value="VIDEO">Video</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+    <div className="space-y-5">
+      <div className="flex items-center gap-3 mb-1">
+        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+          <Link2 className="h-5 w-5 text-primary" />
         </div>
+        <div>
+          <h3 className="text-sm font-semibold text-foreground">
+            Add Link or Video Material
+          </h3>
+          <p className="text-xs text-muted-foreground">
+            Attach an external resource to a subject
+          </p>
+        </div>
+      </div>
 
-        <div className="space-y-1.5">
-          <label className="text-xs font-medium text-muted-foreground">Description</label>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="space-y-2">
+          <Label className="text-xs font-medium text-muted-foreground">
+            Subject ID
+          </Label>
           <Input
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder="e.g. Chapter 1: Arrays and Linked Lists"
-            className="bg-secondary/30 border-border/40"
+            type="number"
+            value={subjectId}
+            onChange={(e) => setSubjectId(e.target.value)}
+            placeholder="e.g. 1"
+            className="bg-secondary/30 border-border/50"
           />
         </div>
+        <div className="space-y-2">
+          <Label className="text-xs font-medium text-muted-foreground">
+            Type
+          </Label>
+          <Select
+            value={type}
+            onValueChange={(v) => setType(v as "LINK" | "VIDEO")}
+          >
+            <SelectTrigger className="w-full bg-secondary/30 border-border/50">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="LINK">
+                <span className="flex items-center gap-2">
+                  <Link2 className="h-3.5 w-3.5" />
+                  Link
+                </span>
+              </SelectItem>
+              <SelectItem value="VIDEO">
+                <span className="flex items-center gap-2">
+                  <Video className="h-3.5 w-3.5" />
+                  Video
+                </span>
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
 
-        {materialType === "PDF" && (
-          <div className="space-y-1.5">
-            <label className="text-xs font-medium text-muted-foreground">Upload PDF</label>
-            <input
-              type="file"
-              accept=".pdf"
-              onChange={(e) => {
-                if (e.target.files && e.target.files[0]) {
-                  setUploadFile(e.target.files[0])
-                }
-              }}
-              className="text-xs text-muted-foreground file:mr-2 file:rounded-lg file:border file:border-primary/20 file:bg-primary/10 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-primary hover:file:bg-primary/20"
-            />
-            {uploadFile && (
-              <p className="text-[11px] text-muted-foreground">Selected: {uploadFile.name}</p>
-            )}
-          </div>
-        )}
+      <div className="space-y-2">
+        <Label className="text-xs font-medium text-muted-foreground">URL</Label>
+        <Input
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+          placeholder="https://example.com/resource"
+          className="bg-secondary/30 border-border/50"
+        />
+      </div>
 
-        {materialType !== "PDF" && (
+      <div className="space-y-2">
+        <Label className="text-xs font-medium text-muted-foreground">
+          Description
+        </Label>
+        <Input
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="Brief description of this material"
+          className="bg-secondary/30 border-border/50"
+        />
+      </div>
+
+      {status && <StatusMessage message={status.message} type={status.type} />}
+
+      <Button
+        onClick={handleSubmit}
+        disabled={isLoading || !subjectId || !url}
+        className="w-full bg-primary text-primary-foreground hover:bg-primary/90 gap-2"
+      >
+        {isLoading ? (
           <>
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-muted-foreground">
-                {materialType === "LINK" ? "URL" : "File Path"}
-              </label>
-              <Input
-                value={filePath}
-                onChange={(e) => setFilePath(e.target.value)}
-                placeholder={materialType === "LINK" ? "https://..." : "filename.pdf"}
-                className="bg-secondary/30 border-border/40"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-muted-foreground">Content (optional)</label>
-              <textarea
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                placeholder="Text content to index..."
-                className="w-full h-20 px-3 py-2 text-sm rounded-lg bg-secondary/30 border border-border/40 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
-              />
-            </div>
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Processing...
+          </>
+        ) : (
+          <>
+            <Send className="h-4 w-4" />
+            Add Material
           </>
         )}
-
-        {message && (
-          <div
-            className={`text-xs rounded-lg px-3 py-2 ${
-              message.type === "success"
-                ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-                : "bg-red-500/10 text-red-400 border border-red-500/20"
-            }`}
-          >
-            {message.text}
-          </div>
-        )}
-
-        <Button
-          onClick={handleAddMaterial}
-          disabled={uploading || !selectedSubjectId}
-          className="w-full bg-primary text-primary-foreground hover:bg-primary/90 gap-1.5"
-        >
-          {uploading ? (
-            <>
-              <Loader2 className="h-4 w-4 animate-spin" />
-              Uploading...
-            </>
-          ) : (
-            <>
-              <Upload className="h-4 w-4" />
-              Add Material
-            </>
-          )}
-        </Button>
-      </div>
+      </Button>
     </div>
   )
 }
 
-/* ---------- Main Component ---------- */
-export function AdminDashboard() {
-  const { user } = useAuth()
-  const [subjects, setSubjects] = useState<BackendSubject[]>([])
-  const [allMaterials, setAllMaterials] = useState<BackendMaterial[]>([])
-  const [loading, setLoading] = useState(true)
-  const [backendConnected, setBackendConnected] = useState(false)
-  const [refreshKey, setRefreshKey] = useState(0)
-  const [viewerMaterial, setViewerMaterial] = useState<BackendMaterial | null>(null)
+/* ---------- Upload PDF Notes Tab ---------- */
+function UploadPdfForm() {
+  const [subjectId, setSubjectId] = useState("")
+  const [description, setDescription] = useState("")
+  const [file, setFile] = useState<File | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
+  const [status, setStatus] = useState<{
+    message: string
+    type: "success" | "error"
+  } | null>(null)
 
-  // Load subjects and materials from backend
-  useEffect(() => {
-    if (!user?.email) {
-      setLoading(false)
-      return
+  const handleSubmit = async () => {
+    if (!subjectId || !file) return
+    setIsLoading(true)
+    setStatus(null)
+
+    try {
+      const formData = new FormData()
+      formData.append("subjectId", subjectId)
+      formData.append("type", "PDF")
+      formData.append("description", description)
+      formData.append("file", file)
+
+      const res = await fetch(`${BASE_URL}/admin/upload`, {
+        method: "POST",
+        body: formData,
+      })
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => null)
+        throw new Error(
+          errData?.message || `Request failed with status ${res.status}`
+        )
+      }
+
+      setStatus({ message: "PDF uploaded successfully!", type: "success" })
+      setDescription("")
+      setFile(null)
+    } catch (err) {
+      setStatus({
+        message:
+          err instanceof Error ? err.message : "Failed to upload PDF",
+        type: "error",
+      })
+    } finally {
+      setIsLoading(false)
     }
-
-    setLoading(true)
-    getSubjects(user.email)
-      .then(async (subjectsData) => {
-        setSubjects(subjectsData)
-        setBackendConnected(true)
-
-        // Load materials for each subject
-        const mats: BackendMaterial[] = []
-        for (const subj of subjectsData) {
-          try {
-            const m = await getMaterials(subj.id)
-            mats.push(...m)
-          } catch {
-            // Skip
-          }
-        }
-        setAllMaterials(mats)
-      })
-      .catch(() => {
-        setBackendConnected(false)
-      })
-      .finally(() => setLoading(false))
-  }, [user?.email, refreshKey])
+  }
 
   return (
-    <section className="mx-auto max-w-6xl px-4 pb-16">
-      {/* Header */}
-      <div className="mb-6">
-        <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
-          <Shield className="h-5 w-5 text-amber-400" />
-          Admin Dashboard
-        </h2>
-        <p className="text-xs text-muted-foreground mt-0.5">
-          Platform overview, user management, and content moderation
-        </p>
+    <div className="space-y-5">
+      <div className="flex items-center gap-3 mb-1">
+        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-500/10">
+          <FileUp className="h-5 w-5 text-amber-400" />
+        </div>
+        <div>
+          <h3 className="text-sm font-semibold text-foreground">
+            Upload PDF Notes
+          </h3>
+          <p className="text-xs text-muted-foreground">
+            Upload study material as a PDF document
+          </p>
+        </div>
       </div>
 
-      {/* Backend connection status */}
-      {!loading && (
-        <div className={`mb-4 glass rounded-xl px-4 py-2.5 flex items-center gap-2 text-xs ${
-          backendConnected
-            ? "text-emerald-400 border border-emerald-500/20 bg-emerald-500/5"
-            : "text-amber-400 border border-amber-500/20 bg-amber-500/5"
-        }`}>
-          <span className={`h-2 w-2 rounded-full ${backendConnected ? "bg-emerald-400" : "bg-amber-400 animate-pulse"}`} />
-          {backendConnected
-            ? `Connected to backend -- ${subjects.length} subjects, ${allMaterials.length} materials indexed`
-            : "Backend not connected -- showing demo data"}
-        </div>
-      )}
+      <div className="space-y-2">
+        <Label className="text-xs font-medium text-muted-foreground">
+          Subject ID
+        </Label>
+        <Input
+          type="number"
+          value={subjectId}
+          onChange={(e) => setSubjectId(e.target.value)}
+          placeholder="e.g. 1"
+          className="bg-secondary/30 border-border/50"
+        />
+      </div>
 
-      {loading && (
-        <div className="flex items-center justify-center py-16">
-          <Loader2 className="h-6 w-6 animate-spin text-primary" />
-          <span className="ml-2 text-sm text-muted-foreground">Loading dashboard...</span>
-        </div>
-      )}
+      <div className="space-y-2">
+        <Label className="text-xs font-medium text-muted-foreground">
+          Description
+        </Label>
+        <Input
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="e.g. Chapter 3: Sorting Algorithms"
+          className="bg-secondary/30 border-border/50"
+        />
+      </div>
 
-      {!loading && (
-        <>
-          {/* Stats Grid */}
-          <div className="grid grid-cols-2 gap-4 mb-6 lg:grid-cols-4">
-            <StatCard
-              label="Total Users"
-              value={backendConnected ? "3" : "4,832"}
-              change={backendConnected ? "Backend connected" : "+12.5% this month"}
-              icon={Users}
-              color="bg-sky-500/15 text-sky-400"
-            />
-            <StatCard
-              label="Subjects"
-              value={backendConnected ? String(subjects.length) : "1,247"}
-              change={backendConnected ? "From database" : "+8.3% vs yesterday"}
-              icon={Search}
-              color="bg-emerald-500/15 text-emerald-400"
-            />
-            <StatCard
-              label="Materials Indexed"
-              value={backendConnected ? String(allMaterials.length) : "12,456"}
-              change={backendConnected ? "PDFs, Links, Videos" : "+156 this week"}
-              icon={FileText}
-              color="bg-amber-500/15 text-amber-400"
-            />
-            <StatCard
-              label="Active Collabs"
-              value="89"
-              change="+23 new this month"
-              icon={Handshake}
-              color="bg-primary/15 text-primary"
-            />
-          </div>
-
-          {/* System Health */}
-          <div className="glass rounded-xl p-4 mb-6">
-            <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-              <Activity className="h-4 w-4 text-primary" />
-              System Health
-            </h3>
-            <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-              {[
-                { label: "Backend API", status: backendConnected ? "Operational" : "Offline", ok: backendConnected },
-                { label: "AI Engine", status: "Operational", ok: true },
-                { label: "Search Index", status: backendConnected ? "Operational" : "Fallback", ok: backendConnected },
-                { label: "File Storage", status: "Operational", ok: true },
-              ].map((item) => (
-                <div key={item.label} className="flex items-center gap-2">
-                  <span className={`h-2 w-2 rounded-full ${item.ok ? "bg-emerald-400" : "bg-amber-400 animate-pulse"}`} />
-                  <div>
-                    <p className="text-xs font-medium text-foreground">{item.label}</p>
-                    <p className={`text-[11px] ${item.ok ? "text-emerald-400" : "text-amber-400"}`}>{item.status}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Two-column layout */}
-          <div className="grid gap-6 lg:grid-cols-2">
-            {/* User Management */}
-            <div className="glass rounded-xl p-5">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
-                  <Users className="h-4 w-4 text-primary" />
-                  Recent Users
-                </h3>
-                <Button variant="ghost" size="sm" className="text-xs text-primary hover:text-primary/80 h-7">
-                  View All
-                </Button>
+      <div className="space-y-2">
+        <Label className="text-xs font-medium text-muted-foreground">
+          PDF File
+        </Label>
+        <div className="relative">
+          <label
+            htmlFor="pdf-upload"
+            className={`flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed px-6 py-8 transition-colors ${
+              file
+                ? "border-primary/40 bg-primary/5"
+                : "border-border/50 bg-secondary/20 hover:border-primary/30 hover:bg-secondary/30"
+            }`}
+          >
+            <Upload className={`h-8 w-8 ${file ? "text-primary" : "text-muted-foreground/50"}`} />
+            {file ? (
+              <div className="text-center">
+                <p className="text-sm font-medium text-foreground">
+                  {file.name}
+                </p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {(file.size / 1024).toFixed(1)} KB
+                </p>
               </div>
-              <div>
-                <UserRow name="John Doe" email="student@email.com" role="Student" department="CS" lastActive="Seeded" status="active" />
-                <UserRow name="Prof Smith" email="teacher@email.com" role="Teacher" department="CS" lastActive="Seeded" status="active" />
-                <UserRow name="Admin User" email="admin@email.com" role="Admin" department="Admin" lastActive="Seeded" status="active" />
-              </div>
-            </div>
-
-            {/* Admin Material Upload */}
-            {backendConnected && subjects.length > 0 && (
-              <MaterialManager
-                subjects={subjects}
-                onMaterialAdded={() => setRefreshKey((k) => k + 1)}
-              />
-            )}
-
-            {/* Content Moderation (fallback when no backend) */}
-            {(!backendConnected || subjects.length === 0) && (
-              <div className="glass rounded-xl p-5">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
-                    <AlertTriangle className="h-4 w-4 text-amber-400" />
-                    Content Moderation Queue
-                    <Badge variant="outline" className="border-amber-500/20 bg-amber-500/10 text-amber-400 text-[10px] ml-1">
-                      3 pending
-                    </Badge>
-                  </h3>
-                </div>
-                <div>
-                  <ModerationItem
-                    title="Unofficial Exam Solutions - Maths III"
-                    type="PDF Upload"
-                    flaggedBy="System AI"
-                    reason="Potential copyright issue"
-                  />
-                  <ModerationItem
-                    title="Off-topic Discussion Post"
-                    type="Research Collab"
-                    flaggedBy="User report"
-                    reason="Spam / irrelevant content"
-                  />
-                  <ModerationItem
-                    title="Duplicate Research Paper Upload"
-                    type="Document"
-                    flaggedBy="System AI"
-                    reason="Duplicate detection"
-                  />
-                </div>
+            ) : (
+              <div className="text-center">
+                <p className="text-sm text-muted-foreground">
+                  Click to select a PDF
+                </p>
+                <p className="text-xs text-muted-foreground/60 mt-0.5">
+                  PDF files only
+                </p>
               </div>
             )}
-          </div>
+          </label>
+          <input
+            id="pdf-upload"
+            type="file"
+            accept=".pdf"
+            className="sr-only"
+            onChange={(e) => {
+              if (e.target.files && e.target.files[0]) {
+                setFile(e.target.files[0])
+              }
+            }}
+          />
+        </div>
+      </div>
 
-          {/* Backend Materials List */}
-          {backendConnected && allMaterials.length > 0 && (
-            <div className="glass rounded-xl p-5 mt-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
-                  <FileText className="h-4 w-4 text-primary" />
-                  Indexed Materials
-                </h3>
-                <div className="flex items-center gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="h-7 gap-1.5 text-xs border-primary/20 text-primary hover:bg-primary/10"
-                    onClick={() => downloadAllMaterials(allMaterials)}
-                  >
-                    <Download className="h-3 w-3" />
-                    Download All ({allMaterials.length})
-                  </Button>
-                  <Badge variant="outline" className="text-[10px] border-primary/20 bg-primary/10 text-primary">
-                    {allMaterials.length} total
-                  </Badge>
-                </div>
-              </div>
-              <div className="space-y-2">
-                {allMaterials.map((mat) => (
-                  <div
-                    key={mat.id}
-                    className="group flex items-center gap-4 py-2.5 border-b border-border/30 last:border-0 hover:bg-secondary/10 rounded-lg transition-colors px-1 cursor-pointer"
-                    onClick={() => setViewerMaterial(mat)}
-                  >
-                    <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                      <FileText className="h-4 w-4 text-primary" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-foreground truncate">
-                        {mat.description || mat.filePath}
-                      </p>
-                      <p className="text-xs text-muted-foreground truncate">
-                        {mat.subject.name} &middot; {mat.type}
-                      </p>
-                    </div>
-                    <Badge variant="outline" className="text-[10px] bg-sky-500/10 text-sky-400 border-sky-500/20 shrink-0">
-                      {mat.type}
-                    </Badge>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); downloadMaterial(mat) }}
-                      className="shrink-0 h-7 w-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 opacity-0 group-hover:opacity-100 transition-all"
-                      title="Download"
-                    >
-                      <Download className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+      {status && <StatusMessage message={status.message} type={status.type} />}
 
-          {/* Department Analytics (always show) */}
-          <div className="glass rounded-xl p-5 mt-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
-                <BarChart3 className="h-4 w-4 text-primary" />
-                Department Analytics
-              </h3>
-            </div>
-            <div>
-              {backendConnected && subjects.length > 0 ? (
-                // Group subjects by department
-                Object.entries(
-                  subjects.reduce((acc, s) => {
-                    if (!acc[s.department]) acc[s.department] = { count: 0, materials: 0 }
-                    acc[s.department].count++
-                    acc[s.department].materials += allMaterials.filter(
-                      (m) => m.subject.department === s.department
-                    ).length
-                    return acc
-                  }, {} as Record<string, { count: number; materials: number }>)
-                ).map(([dept, data]) => (
-                  <DepartmentStat
-                    key={dept}
-                    name={dept}
-                    students={0}
-                    faculty={0}
-                    content={data.materials}
-                  />
-                ))
-              ) : (
-                <>
-                  <DepartmentStat name="Computer Science" students={1240} faculty={45} content={3420} />
-                  <DepartmentStat name="Electrical Engineering" students={890} faculty={38} content={2180} />
-                  <DepartmentStat name="Mechanical Engineering" students={780} faculty={32} content={1890} />
-                  <DepartmentStat name="Physics" students={420} faculty={22} content={1240} />
-                  <DepartmentStat name="Mathematics" students={350} faculty={18} content={980} />
-                </>
-              )}
-            </div>
+      <Button
+        onClick={handleSubmit}
+        disabled={isLoading || !subjectId || !file}
+        className="w-full bg-primary text-primary-foreground hover:bg-primary/90 gap-2"
+      >
+        {isLoading ? (
+          <>
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Processing...
+          </>
+        ) : (
+          <>
+            <Upload className="h-4 w-4" />
+            Upload PDF
+          </>
+        )}
+      </Button>
+    </div>
+  )
+}
+
+/* ---------- Ask the AI Tab ---------- */
+function AskAiForm() {
+  const [subjectId, setSubjectId] = useState("")
+  const [question, setQuestion] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
+  const [answer, setAnswer] = useState("")
+  const [status, setStatus] = useState<{
+    message: string
+    type: "success" | "error"
+  } | null>(null)
+
+  const handleSubmit = async () => {
+    if (!subjectId || !question) return
+    setIsLoading(true)
+    setStatus(null)
+    setAnswer("")
+
+    try {
+      const res = await fetch(`${BASE_URL}/ai/explain`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          subjectId: Number(subjectId),
+          question,
+        }),
+      })
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => null)
+        throw new Error(
+          errData?.message || `Request failed with status ${res.status}`
+        )
+      }
+
+      const data = await res.json()
+      setAnswer(
+        data.answer || data.explanation || data.response || JSON.stringify(data)
+      )
+    } catch (err) {
+      setStatus({
+        message:
+          err instanceof Error ? err.message : "Failed to get AI response",
+        type: "error",
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  return (
+    <div className="space-y-5">
+      <div className="flex items-center gap-3 mb-1">
+        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-sky-500/10">
+          <BrainCircuit className="h-5 w-5 text-sky-400" />
+        </div>
+        <div>
+          <h3 className="text-sm font-semibold text-foreground">
+            Ask the AI
+          </h3>
+          <p className="text-xs text-muted-foreground">
+            Get AI-powered explanations for any topic
+          </p>
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label className="text-xs font-medium text-muted-foreground">
+          Subject ID
+        </Label>
+        <Input
+          type="number"
+          value={subjectId}
+          onChange={(e) => setSubjectId(e.target.value)}
+          placeholder="e.g. 1"
+          className="bg-secondary/30 border-border/50"
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label className="text-xs font-medium text-muted-foreground">
+          Your Question
+        </Label>
+        <Textarea
+          value={question}
+          onChange={(e) => setQuestion(e.target.value)}
+          placeholder="e.g. Explain the difference between BFS and DFS..."
+          className="min-h-28 bg-secondary/30 border-border/50 resize-none"
+        />
+      </div>
+
+      {status && <StatusMessage message={status.message} type={status.type} />}
+
+      <Button
+        onClick={handleSubmit}
+        disabled={isLoading || !subjectId || !question}
+        className="w-full bg-primary text-primary-foreground hover:bg-primary/90 gap-2"
+      >
+        {isLoading ? (
+          <>
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Processing...
+          </>
+        ) : (
+          <>
+            <Sparkles className="h-4 w-4" />
+            Ask AI
+          </>
+        )}
+      </Button>
+
+      {/* AI Answer Display */}
+      {answer && (
+        <div className="rounded-lg border border-primary/20 bg-primary/5 p-5">
+          <div className="flex items-center gap-2 mb-3">
+            <Sparkles className="h-4 w-4 text-primary" />
+            <span className="text-xs font-semibold text-primary uppercase tracking-wider">
+              AI Response
+            </span>
           </div>
-        </>
+          <div className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
+            {answer}
+          </div>
+        </div>
       )}
+    </div>
+  )
+}
 
-      {/* In-app material viewer */}
-      <MaterialViewer
-        material={viewerMaterial}
-        open={!!viewerMaterial}
-        onClose={() => setViewerMaterial(null)}
-      />
+/* ---------- Main Admin Dashboard ---------- */
+export function AdminDashboard() {
+  return (
+    <section className="mx-auto max-w-3xl px-4 pb-16">
+      {/* Header */}
+      <div className="mb-6">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+            <Shield className="h-5 w-5 text-primary" />
+          </div>
+          <div>
+            <h2 className="text-lg font-semibold text-foreground text-balance">
+              Admin Dashboard
+            </h2>
+            <p className="text-xs text-muted-foreground">
+              Manage materials, upload notes, and query the AI engine
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Tabbed Interface */}
+      <Tabs defaultValue="material" className="w-full">
+        <TabsList className="w-full grid grid-cols-3 h-11 mb-6 bg-secondary/40 rounded-xl p-1">
+          <TabsTrigger
+            value="material"
+            className="gap-1.5 rounded-lg text-xs data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+          >
+            <Link2 className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Link / Video</span>
+            <span className="sm:hidden">Link</span>
+          </TabsTrigger>
+          <TabsTrigger
+            value="pdf"
+            className="gap-1.5 rounded-lg text-xs data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+          >
+            <FileUp className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Upload PDF</span>
+            <span className="sm:hidden">PDF</span>
+          </TabsTrigger>
+          <TabsTrigger
+            value="ai"
+            className="gap-1.5 rounded-lg text-xs data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+          >
+            <Sparkles className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Ask AI</span>
+            <span className="sm:hidden">AI</span>
+          </TabsTrigger>
+        </TabsList>
+
+        {/* Tab Content Cards */}
+        <div className="glass rounded-xl p-6">
+          <TabsContent value="material" className="mt-0">
+            <AddMaterialForm />
+          </TabsContent>
+
+          <TabsContent value="pdf" className="mt-0">
+            <UploadPdfForm />
+          </TabsContent>
+
+          <TabsContent value="ai" className="mt-0">
+            <AskAiForm />
+          </TabsContent>
+        </div>
+      </Tabs>
+
+      {/* Footer Badge */}
+      <div className="flex justify-center mt-6">
+        <Badge
+          variant="outline"
+          className="text-[10px] border-border/40 bg-secondary/20 text-muted-foreground gap-1.5 px-3 py-1"
+        >
+          <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+          Connected to EduNexus Backend
+        </Badge>
+      </div>
     </section>
   )
 }
