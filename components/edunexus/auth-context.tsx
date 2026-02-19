@@ -110,11 +110,11 @@ const MOCK_USERS: Record<string, User & { password: string }> = {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
 
-  const login = useCallback(async (email: string, _password: string) => {
+  const login = useCallback(async (email: string, password: string) => {
     // Retry helper for cold-starting Render instances
     const tryLogin = async (retries: number): Promise<FrontendUser> => {
       try {
-        const backendUser = await loginUser(email)
+        const backendUser = await loginUser(email, password)
         return mapBackendUserToFrontend(backendUser)
       } catch (err) {
         // 502/503 = proxy reached backend but it's still waking up
@@ -154,7 +154,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             "Backend is offline and no mock account found for this email.",
         }
       }
-      if (found.password !== _password) {
+      if (found.password !== password) {
         return { success: false, error: "Incorrect password (mock mode)" }
       }
       const { password: _, ...userWithoutPassword } = found
@@ -165,31 +165,53 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signup = useCallback(
     async (
-      name: string,
+      _name: string,
       email: string,
-      _password: string,
-      role: UserRole,
-      department: string
+      password: string,
+      _role: UserRole,
+      _department: string
     ) => {
-      // The current backend does not have a signup endpoint.
-      // For now, create the user locally. When the backend adds POST /auth/register,
-      // this can be wired up just like login.
-      const initials = name
-        .split(" ")
-        .map((n) => n[0])
-        .join("")
-        .toUpperCase()
-        .slice(0, 2)
-      const newUser: User = {
-        id: `u_${Date.now()}`,
-        name,
-        email: email.toLowerCase(),
-        role,
-        department,
-        avatar: initials,
+      // The backend does not expose a registration endpoint.
+      // Attempt to log in directly -- if the admin has already created
+      // the account on the server, this will succeed.
+      const tryLogin = async (retries: number): Promise<FrontendUser> => {
+        try {
+          const backendUser = await loginUser(email, password)
+          return mapBackendUserToFrontend(backendUser)
+        } catch (err) {
+          const isServerWaking =
+            err instanceof ApiError && (err.status === 502 || err.status === 503)
+          if (isServerWaking && retries > 0) {
+            await new Promise((r) => setTimeout(r, 3000))
+            return tryLogin(retries - 1)
+          }
+          throw err
+        }
       }
-      setUser(newUser)
-      return { success: true }
+
+      try {
+        const frontendUser = await tryLogin(3)
+        setUser(frontendUser)
+        return { success: true }
+      } catch (err) {
+        if (err instanceof ApiError) {
+          if (err.status === 401 || err.status === 404) {
+            return {
+              success: false,
+              error:
+                "Account not found. New accounts must be created by an administrator. Please contact your campus admin.",
+            }
+          }
+          return {
+            success: false,
+            error: err.message || "Registration failed. Please try again.",
+          }
+        }
+        return {
+          success: false,
+          error: "Unable to reach the server. Please try again later.",
+        }
+      }
     },
     []
   )

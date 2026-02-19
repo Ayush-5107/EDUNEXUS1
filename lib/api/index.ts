@@ -2,7 +2,8 @@
 // All backend service functions and types in one place
 
 export { apiClient, ApiError, getApiBaseUrl } from "./client"
-export { loginUser } from "./auth.service"
+export { loginUser, registerUser } from "./auth.service"
+export type { RegisterRequest } from "./auth.service"
 export {
   getSubjects,
   getMaterials,
