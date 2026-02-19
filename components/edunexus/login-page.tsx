@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { useAuth } from "./auth-context"
 import { useTheme } from "next-themes"
-import { Eye, EyeOff, Loader2, GraduationCap, BookOpen, Shield, Sun, Moon, UserPlus, ArrowLeft } from "lucide-react"
+import { Eye, EyeOff, Loader2, GraduationCap, BookOpen, Shield, Sun, Moon } from "lucide-react"
 import { EduNexusLogo } from "./edunexus-logo"
 import type { UserRole } from "./auth-context"
 
@@ -62,17 +62,9 @@ export function LoginPage() {
     setLoading(true)
 
     if (isSignUp) {
-      if (!name.trim()) {
-        setError("Please enter your full name")
-        setLoading(false)
-        return
-      }
-      if (!department.trim()) {
-        setError("Please enter your department")
-        setLoading(false)
-        return
-      }
-      const result = await signup(name, email, password, role, department)
+      // Backend has no registration endpoint; signup tries to log in
+      // with admin-provisioned credentials
+      const result = await signup("", email, password, role, "")
       if (!result.success) {
         setError(result.error || "Sign up failed")
       }
@@ -144,29 +136,17 @@ export function LoginPage() {
           </h2>
           <p className="text-muted-foreground text-sm mb-6">
             {isSignUp
-              ? "Join EduNexus to access your smart campus"
+              ? "Enter the credentials provided by your campus administrator"
               : "Your role is automatically detected from your credentials"}
           </p>
 
-          <form onSubmit={handleSubmit} className="space-y-4" suppressHydrationWarning>
-            {/* Name field (sign-up only) */}
-            {isSignUp && (
-              <div>
-                <label htmlFor="name" className="block text-sm font-medium text-secondary-foreground mb-1.5">
-                  Full Name
-                </label>
-                <input
-                  id="name"
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Your full name"
-                  className="w-full h-11 px-4 rounded-xl bg-secondary/50 border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all text-sm"
-                  required
-                />
-              </div>
-            )}
+          {isSignUp && (
+            <div className="text-sm text-amber-400 bg-amber-500/10 border border-amber-500/20 rounded-xl px-4 py-2.5 mb-4">
+              New accounts are created by your campus administrator. If you already have credentials, sign in below. Otherwise, contact your admin.
+            </div>
+          )}
 
+          <form onSubmit={handleSubmit} className="space-y-4" suppressHydrationWarning>
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-secondary-foreground mb-1.5">
                 Email
@@ -210,41 +190,6 @@ export function LoginPage() {
               </div>
             </div>
 
-            {/* Role & Department (sign-up only) */}
-            {isSignUp && (
-              <>
-                <div>
-                  <label htmlFor="role" className="block text-sm font-medium text-secondary-foreground mb-1.5">
-                    Role
-                  </label>
-                  <select
-                    id="role"
-                    value={role}
-                    onChange={(e) => setRole(e.target.value as UserRole)}
-                    className="w-full h-11 px-4 rounded-xl bg-secondary/50 border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all appearance-none"
-                  >
-                    <option value="student">Student</option>
-                    <option value="faculty">Faculty</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label htmlFor="department" className="block text-sm font-medium text-secondary-foreground mb-1.5">
-                    Department
-                  </label>
-                  <input
-                    id="department"
-                    type="text"
-                    value={department}
-                    onChange={(e) => setDepartment(e.target.value)}
-                    placeholder="e.g. Computer Science"
-                    className="w-full h-11 px-4 rounded-xl bg-secondary/50 border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all text-sm"
-                    required
-                  />
-                </div>
-              </>
-            )}
-
             {error && (
               <div className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-2.5">
                 {error}
@@ -260,10 +205,10 @@ export function LoginPage() {
               {loading ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  {isSignUp ? "Creating account..." : "Signing in..."}
+                  {"Signing in..."}
                 </>
               ) : (
-                isSignUp ? "Create Account" : "Sign In"
+                "Sign In"
               )}
             </button>
           </form>

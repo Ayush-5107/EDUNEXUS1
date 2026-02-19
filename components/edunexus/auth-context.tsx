@@ -7,8 +7,7 @@ import {
   useCallback,
   type ReactNode,
 } from "react"
-import { loginUser, registerUser } from "@/lib/api/auth.service"
-import type { RegisterRequest } from "@/lib/api/auth.service"
+import { loginUser } from "@/lib/api/auth.service"
 import {
   mapBackendUserToFrontend,
   type FrontendUser,
@@ -166,43 +165,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signup = useCallback(
     async (
-      name: string,
+      _name: string,
       email: string,
       password: string,
-      role: UserRole,
-      department: string
+      _role: UserRole,
+      _department: string
     ) => {
-      // Map frontend role to backend enum
-      const backendRole: RegisterRequest["role"] =
-        role === "student" ? "STUDENT" : role === "faculty" ? "TEACHER" : "ADMIN"
-
-      const tryRegister = async (retries: number): Promise<FrontendUser> => {
+      // The backend does not expose a registration endpoint.
+      // Attempt to log in directly -- if the admin has already created
+      // the account on the server, this will succeed.
+      const tryLogin = async (retries: number): Promise<FrontendUser> => {
         try {
-          const backendUser = await registerUser({
-            name,
-            email: email.toLowerCase(),
-            password,
-            role: backendRole,
-            department,
-          })
+          const backendUser = await loginUser(email, password)
           return mapBackendUserToFrontend(backendUser)
         } catch (err) {
           const isServerWaking =
             err instanceof ApiError && (err.status === 502 || err.status === 503)
           if (isServerWaking && retries > 0) {
             await new Promise((r) => setTimeout(r, 3000))
-            return tryRegister(retries - 1)
+            return tryLogin(retries - 1)
           }
           throw err
         }
       }
 
       try {
-        const frontendUser = await tryRegister(3)
+        const frontendUser = await tryLogin(3)
         setUser(frontendUser)
         return { success: true }
       } catch (err) {
         if (err instanceof ApiError) {
+          if (err.status === 401 || err.status === 404) {
+            return {
+              success: false,
+              error:
+                "Account not found. New accounts must be created by an administrator. Please contact your campus admin.",
+            }
+          }
           return {
             success: false,
             error: err.message || "Registration failed. Please try again.",
