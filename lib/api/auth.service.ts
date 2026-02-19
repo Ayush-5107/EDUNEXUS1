@@ -30,7 +30,7 @@ export async function registerUser(
   data: RegisterRequest
 ): Promise<BackendUser> {
   return apiClient<BackendUser>("/auth/register", {
-    method: "POST",
+    method: "GET",
     body: data,
   })
 }
