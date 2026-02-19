@@ -45,6 +45,7 @@ import type { UserRole } from "./auth-context"
 import { useAuth } from "./auth-context"
 import { getSubjects, getMaterials } from "@/lib/api/academic.service"
 import { aiExplain } from "@/lib/api/ai.service"
+import { downloadMaterial, downloadAllMaterials } from "@/lib/api/download"
 import type {
   BackendSubject,
   BackendMaterial,
@@ -444,6 +445,23 @@ function SubjectDetail({
       {/* Materials list (from backend) */}
       {activeTab === "materials" && (
         <div className="space-y-2">
+          {/* Download All button */}
+          {!materialsLoading && !materialsError && materials.length > 0 && (
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-xs text-muted-foreground">
+                {materials.length} material{materials.length !== 1 ? "s" : ""} available
+              </p>
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-8 gap-1.5 text-xs border-primary/20 text-primary hover:bg-primary/10"
+                onClick={() => downloadAllMaterials(materials)}
+              >
+                <Download className="h-3.5 w-3.5" />
+                Download All
+              </Button>
+            </div>
+          )}
           {materialsLoading && (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-6 w-6 animate-spin text-primary" />
@@ -487,6 +505,15 @@ function SubjectDetail({
                   </p>
                 )}
               </div>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-8 gap-1.5 text-xs text-muted-foreground hover:text-primary opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                onClick={() => downloadMaterial(mat)}
+              >
+                <Download className="h-3.5 w-3.5" />
+                {mat.type === "LINK" || mat.type === "VIDEO" ? "Open" : "Download"}
+              </Button>
             </div>
           ))}
         </div>
