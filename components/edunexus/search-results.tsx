@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button"
 import { useAuth } from "./auth-context"
 import { getSubjects, getMaterials } from "@/lib/api/academic.service"
 import { downloadMaterial, downloadAllMaterials } from "@/lib/api/download"
+import { MaterialViewer } from "./material-viewer"
 import type { BackendMaterial } from "@/lib/api/types"
 
 /* ---------- Filter types ---------- */
@@ -40,6 +41,7 @@ function AISynthesisCard({ query }: { query: string }) {
   const { user } = useAuth()
   const [backendMaterials, setBackendMaterials] = useState<BackendMaterial[]>([])
   const [backendLoading, setBackendLoading] = useState(true)
+  const [viewerMaterial, setViewerMaterial] = useState<BackendMaterial | null>(null)
 
   // Attempt to load materials from backend that match the search query
   useEffect(() => {
@@ -218,7 +220,11 @@ function AISynthesisCard({ query }: { query: string }) {
           </div>
           <div className="space-y-2">
             {backendMaterials.slice(0, 3).map((mat) => (
-              <div key={mat.id} className="group flex items-start gap-2 rounded-lg border border-border bg-secondary/20 p-3 hover:border-primary/20 transition-all">
+              <div
+                key={mat.id}
+                className="group flex items-start gap-2 rounded-lg border border-border bg-secondary/20 p-3 hover:border-primary/20 transition-all cursor-pointer"
+                onClick={() => setViewerMaterial(mat)}
+              >
                 <FileText className="h-4 w-4 shrink-0 text-primary mt-0.5" />
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-medium text-foreground">{mat.description || mat.filePath}</p>
@@ -232,9 +238,9 @@ function AISynthesisCard({ query }: { query: string }) {
                   )}
                 </div>
                 <button
-                  onClick={() => downloadMaterial(mat)}
+                  onClick={(e) => { e.stopPropagation(); downloadMaterial(mat) }}
                   className="shrink-0 h-7 w-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 opacity-0 group-hover:opacity-100 transition-all"
-                  title={mat.type === "LINK" || mat.type === "VIDEO" ? "Open" : "Download"}
+                  title="Download"
                 >
                   <Download className="h-3.5 w-3.5" />
                 </button>
@@ -249,6 +255,13 @@ function AISynthesisCard({ query }: { query: string }) {
           ? `Answer grounded in ${backendMaterials.length} institutional source${backendMaterials.length > 1 ? "s" : ""}`
           : "Answer grounded in institutional academic content"}
       </p>
+
+      {/* In-app material viewer */}
+      <MaterialViewer
+        material={viewerMaterial}
+        open={!!viewerMaterial}
+        onClose={() => setViewerMaterial(null)}
+      />
     </div>
   )
 }

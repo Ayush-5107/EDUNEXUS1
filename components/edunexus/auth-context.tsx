@@ -111,23 +111,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
 
   const login = useCallback(async (email: string, _password: string) => {
+    // Retry helper for cold-starting Render instances
+    const tryLogin = async (retries: number): Promise<FrontendUser> => {
+      try {
+        console.log("[v0] Attempting login via proxy for:", email, "retries left:", retries)
+        const backendUser = await loginUser(email)
+        console.log("[v0] Backend login success:", backendUser)
+        return mapBackendUserToFrontend(backendUser)
+      } catch (err) {
+        console.log("[v0] Login attempt failed:", err instanceof ApiError ? `ApiError ${err.status}: ${err.message}` : String(err))
+        // 502/503 = proxy reached backend but it's still waking up
+        const isServerWaking =
+          err instanceof ApiError && (err.status === 502 || err.status === 503)
+        if (isServerWaking && retries > 0) {
+          console.log("[v0] Backend waking up, retrying in 3s...")
+          await new Promise((r) => setTimeout(r, 3000))
+          return tryLogin(retries - 1)
+        }
+        throw err
+      }
+    }
+
     try {
-      // Try the real backend first
-      const backendUser = await loginUser(email)
-      const frontendUser = mapBackendUserToFrontend(backendUser)
+      // Try the real backend first (with up to 3 retries for cold-start)
+      const frontendUser = await tryLogin(3)
       setUser(frontendUser)
       return { success: true }
     } catch (err) {
-      // If backend is unreachable (network error), fall back to mock data
-      if (err instanceof ApiError) {
-        // Backend responded with an error (e.g. 401 user not found)
+      console.log("[v0] All login attempts failed, error type:", err instanceof ApiError ? "ApiError" : "Other", err)
+      // If backend returned a real error (e.g. 401/404 user not found)
+      if (err instanceof ApiError && err.status >= 400 && err.status < 500) {
         return {
           success: false,
           error: err.message || "Login failed. Check your credentials.",
         }
       }
 
-      // Network error - backend not running, try mock fallback
+      // Network error or 5xx -- backend not reachable, fall back to mock
       console.warn(
         "[EduNexus] Backend unreachable, falling back to mock auth"
       )

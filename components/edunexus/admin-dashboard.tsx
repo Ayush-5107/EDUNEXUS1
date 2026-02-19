@@ -31,6 +31,7 @@ import {
 import { useAuth } from "./auth-context"
 import { getSubjects, getMaterials, uploadMaterial, addMaterial } from "@/lib/api/academic.service"
 import { downloadMaterial, downloadAllMaterials } from "@/lib/api/download"
+import { MaterialViewer } from "./material-viewer"
 import type { BackendSubject, BackendMaterial } from "@/lib/api/types"
 
 /* ---------- Stat Card ---------- */
@@ -350,6 +351,7 @@ export function AdminDashboard() {
   const [loading, setLoading] = useState(true)
   const [backendConnected, setBackendConnected] = useState(false)
   const [refreshKey, setRefreshKey] = useState(0)
+  const [viewerMaterial, setViewerMaterial] = useState<BackendMaterial | null>(null)
 
   // Load subjects and materials from backend
   useEffect(() => {
@@ -563,7 +565,11 @@ export function AdminDashboard() {
               </div>
               <div className="space-y-2">
                 {allMaterials.map((mat) => (
-                  <div key={mat.id} className="group flex items-center gap-4 py-2.5 border-b border-border/30 last:border-0 hover:bg-secondary/10 rounded-lg transition-colors px-1">
+                  <div
+                    key={mat.id}
+                    className="group flex items-center gap-4 py-2.5 border-b border-border/30 last:border-0 hover:bg-secondary/10 rounded-lg transition-colors px-1 cursor-pointer"
+                    onClick={() => setViewerMaterial(mat)}
+                  >
                     <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
                       <FileText className="h-4 w-4 text-primary" />
                     </div>
@@ -579,9 +585,9 @@ export function AdminDashboard() {
                       {mat.type}
                     </Badge>
                     <button
-                      onClick={() => downloadMaterial(mat)}
+                      onClick={(e) => { e.stopPropagation(); downloadMaterial(mat) }}
                       className="shrink-0 h-7 w-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 opacity-0 group-hover:opacity-100 transition-all"
-                      title={mat.type === "LINK" || mat.type === "VIDEO" ? "Open" : "Download"}
+                      title="Download"
                     >
                       <Download className="h-3.5 w-3.5" />
                     </button>
@@ -633,6 +639,13 @@ export function AdminDashboard() {
           </div>
         </>
       )}
+
+      {/* In-app material viewer */}
+      <MaterialViewer
+        material={viewerMaterial}
+        open={!!viewerMaterial}
+        onClose={() => setViewerMaterial(null)}
+      />
     </section>
   )
 }
