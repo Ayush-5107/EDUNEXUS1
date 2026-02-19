@@ -39,26 +39,30 @@ const testBody = JSON.stringify({
   department: "CS"
 })
 
-for (const ep of endpoints) {
-  try {
-    const opts = {
-      method: ep.method,
-      headers: { "Content-Type": "application/json" },
+async function run() {
+  for (const ep of endpoints) {
+    try {
+      const opts = {
+        method: ep.method,
+        headers: { "Content-Type": "application/json" },
+      }
+      if (ep.method === "POST") {
+        opts.body = testBody
+      }
+      const res = await fetch(`${BASE}${ep.path}`, opts)
+      const contentType = res.headers.get("content-type") || ""
+      let body = ""
+      if (contentType.includes("json")) {
+        body = JSON.stringify(await res.json())
+      } else {
+        const text = await res.text()
+        body = text.substring(0, 200)
+      }
+      console.log(`${ep.method} ${ep.path} => ${res.status} ${res.statusText} | ${body}`)
+    } catch (err) {
+      console.log(`${ep.method} ${ep.path} => ERROR: ${err.message}`)
     }
-    if (ep.method === "POST") {
-      opts.body = testBody
-    }
-    const res = await fetch(`${BASE}${ep.path}`, opts)
-    const contentType = res.headers.get("content-type") || ""
-    let body = ""
-    if (contentType.includes("json")) {
-      body = JSON.stringify(await res.json())
-    } else {
-      const text = await res.text()
-      body = text.substring(0, 200)
-    }
-    console.log(`${ep.method} ${ep.path} => ${res.status} ${res.statusText} | ${body}`)
-  } catch (err) {
-    console.log(`${ep.method} ${ep.path} => ERROR: ${err.message}`)
   }
 }
+
+run()
