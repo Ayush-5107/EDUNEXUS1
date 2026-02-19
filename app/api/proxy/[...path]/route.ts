@@ -17,43 +17,40 @@ async function proxyRequest(
     url.searchParams.set(key, value)
   })
 
-  const headers: HeadersInit = {}
+  // Build headers - only forward content-type
+  const headers: Record<string, string> = {}
   const contentType = req.headers.get("content-type")
   if (contentType) {
     headers["Content-Type"] = contentType
   }
 
+  // Build body
   let body: BodyInit | undefined
   if (req.method !== "GET" && req.method !== "HEAD") {
     if (contentType?.includes("multipart/form-data")) {
-      // For file uploads, forward the raw body and let fetch set the boundary
       body = await req.arrayBuffer()
-      // Keep the original content-type with boundary
-      headers["Content-Type"] = contentType
     } else {
       body = await req.text()
     }
   }
 
   try {
-    console.log("[v0] Proxy forwarding:", req.method, url.toString())
+    console.log("[v0] Proxy ->", req.method, url.toString())
+
     const backendRes = await fetch(url.toString(), {
       method: req.method,
       headers,
       body,
     })
-    console.log("[v0] Proxy response:", backendRes.status, backendRes.statusText)
 
-    const resContentType = backendRes.headers.get("content-type")
-    let data: string | ArrayBuffer
+    console.log("[v0] Proxy <-", backendRes.status, backendRes.statusText)
 
-    if (resContentType?.includes("application/json")) {
-      data = await backendRes.text()
-    } else {
-      data = await backendRes.arrayBuffer()
-    }
+    const resContentType = backendRes.headers.get("content-type") || ""
+    const resBody = resContentType.includes("application/json")
+      ? await backendRes.text()
+      : await backendRes.arrayBuffer()
 
-    return new NextResponse(data, {
+    return new NextResponse(resBody, {
       status: backendRes.status,
       statusText: backendRes.statusText,
       headers: {
@@ -61,9 +58,12 @@ async function proxyRequest(
       },
     })
   } catch (error) {
-    console.error("[Proxy] Backend error:", error)
+    console.error("[v0] Proxy error:", error)
     return NextResponse.json(
-      { error: "Backend unreachable. It may be cold-starting on Render (wait ~30s and retry)." },
+      {
+        error:
+          "Backend unreachable. It may be cold-starting on Render (~30s). Please retry.",
+      },
       { status: 502 }
     )
   }
