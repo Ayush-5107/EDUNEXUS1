@@ -36,19 +36,28 @@ async function proxyRequest(
   }
 
   try {
+    console.log(`[v0] Proxy -> ${req.method} ${url.toString()}`)
+    if (body && typeof body === "string") {
+      console.log(`[v0] Proxy body: ${body.substring(0, 500)}`)
+    }
+
     const backendRes = await fetch(url.toString(), {
       method: req.method,
       headers,
       body,
     })
 
+    console.log(`[v0] Proxy <- ${backendRes.status} ${backendRes.statusText}`)
+
     const resContentType = backendRes.headers.get("content-type")
     let data: string | ArrayBuffer
 
     if (resContentType?.includes("application/json")) {
       data = await backendRes.text()
+      console.log(`[v0] Proxy response body: ${(data as string).substring(0, 500)}`)
     } else {
       data = await backendRes.arrayBuffer()
+      console.log(`[v0] Proxy response: binary data, ${(data as ArrayBuffer).byteLength} bytes`)
     }
 
     return new NextResponse(data, {
