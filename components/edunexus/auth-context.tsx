@@ -134,28 +134,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(frontendUser)
       return { success: true }
     } catch (err) {
-      // If backend returned a real error (e.g. 401/404 user not found)
-      if (err instanceof ApiError && err.status >= 400 && err.status < 500) {
-        return {
-          success: false,
-          error: err.message || "Login failed. Check your credentials.",
-        }
-      }
-
-      // Network error or 5xx -- backend not reachable, fall back to mock
+      // For any error (4xx from backend like 404 user-not-found, network errors,
+      // or 5xx), try to fall back to mock auth for demo accounts
       console.warn(
-        "[EduNexus] Backend unreachable, falling back to mock auth"
+        "[EduNexus] Backend login failed, falling back to mock auth:",
+        err instanceof ApiError ? `${err.status} ${err.message}` : String(err)
       )
       const found = MOCK_USERS[email.toLowerCase()]
       if (!found) {
+        // No mock account either -- report the original backend error if available
         return {
           success: false,
           error:
-            "Backend is offline and no mock account found for this email.",
+            err instanceof ApiError
+              ? err.message || "Login failed. Check your credentials."
+              : "Backend is offline and no account found for this email.",
         }
       }
       if (found.password !== _password) {
-        return { success: false, error: "Incorrect password (mock mode)" }
+        return { success: false, error: "Incorrect password" }
       }
       const { password: _, ...userWithoutPassword } = found
       setUser(userWithoutPassword)

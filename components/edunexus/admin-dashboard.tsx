@@ -28,7 +28,7 @@ import {
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 
-const BASE_URL = "https://edunexus-backend-nv75.onrender.com"
+const BASE_URL = "/api/proxy"
 
 /* ---------- Status Message Component ---------- */
 function StatusMessage({

@@ -306,6 +306,9 @@ function SubjectDetail({
   const [aiResponse, setAiResponse] = useState<AIExplainResponse | null>(null)
   const [aiLoading, setAiLoading] = useState(false)
 
+  // Material viewer state (local to SubjectDetail so it works when rendered)
+  const [viewerMaterial, setViewerMaterial] = useState<BackendMaterial | null>(null)
+
   useEffect(() => {
     if (subject.backendId) {
       setMaterialsLoading(true)
@@ -688,6 +691,13 @@ function SubjectDetail({
           )}
         </div>
       )}
+
+      {/* In-app material viewer (local to SubjectDetail) */}
+      <MaterialViewer
+        material={viewerMaterial}
+        open={!!viewerMaterial}
+        onClose={() => setViewerMaterial(null)}
+      />
     </div>
   )
 }
