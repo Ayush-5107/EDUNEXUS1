@@ -7,7 +7,8 @@ import {
   useCallback,
   type ReactNode,
 } from "react"
-import { loginUser } from "@/lib/api/auth.service"
+import { loginUser, registerUser } from "@/lib/api/auth.service"
+import type { RegisterRequest } from "@/lib/api/auth.service"
 import {
   mapBackendUserToFrontend,
   type FrontendUser,
@@ -110,11 +111,11 @@ const MOCK_USERS: Record<string, User & { password: string }> = {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
 
-  const login = useCallback(async (email: string, _password: string) => {
+  const login = useCallback(async (email: string, password: string) => {
     // Retry helper for cold-starting Render instances
     const tryLogin = async (retries: number): Promise<FrontendUser> => {
       try {
-        const backendUser = await loginUser(email)
+        const backendUser = await loginUser(email, password)
         return mapBackendUserToFrontend(backendUser)
       } catch (err) {
         // 502/503 = proxy reached backend but it's still waking up
@@ -154,7 +155,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             "Backend is offline and no mock account found for this email.",
         }
       }
-      if (found.password !== _password) {
+      if (found.password !== password) {
         return { success: false, error: "Incorrect password (mock mode)" }
       }
       const { password: _, ...userWithoutPassword } = found
@@ -167,29 +168,51 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async (
       name: string,
       email: string,
-      _password: string,
+      password: string,
       role: UserRole,
       department: string
     ) => {
-      // The current backend does not have a signup endpoint.
-      // For now, create the user locally. When the backend adds POST /auth/register,
-      // this can be wired up just like login.
-      const initials = name
-        .split(" ")
-        .map((n) => n[0])
-        .join("")
-        .toUpperCase()
-        .slice(0, 2)
-      const newUser: User = {
-        id: `u_${Date.now()}`,
-        name,
-        email: email.toLowerCase(),
-        role,
-        department,
-        avatar: initials,
+      // Map frontend role to backend enum
+      const backendRole: RegisterRequest["role"] =
+        role === "student" ? "STUDENT" : role === "faculty" ? "TEACHER" : "ADMIN"
+
+      const tryRegister = async (retries: number): Promise<FrontendUser> => {
+        try {
+          const backendUser = await registerUser({
+            name,
+            email: email.toLowerCase(),
+            password,
+            role: backendRole,
+            department,
+          })
+          return mapBackendUserToFrontend(backendUser)
+        } catch (err) {
+          const isServerWaking =
+            err instanceof ApiError && (err.status === 502 || err.status === 503)
+          if (isServerWaking && retries > 0) {
+            await new Promise((r) => setTimeout(r, 3000))
+            return tryRegister(retries - 1)
+          }
+          throw err
+        }
       }
-      setUser(newUser)
-      return { success: true }
+
+      try {
+        const frontendUser = await tryRegister(3)
+        setUser(frontendUser)
+        return { success: true }
+      } catch (err) {
+        if (err instanceof ApiError) {
+          return {
+            success: false,
+            error: err.message || "Registration failed. Please try again.",
+          }
+        }
+        return {
+          success: false,
+          error: "Unable to reach the server. Please try again later.",
+        }
+      }
     },
     []
   )
